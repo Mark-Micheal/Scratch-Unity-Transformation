@@ -58,10 +58,10 @@ public class Motion : MonoBehaviour
             case "TL" : Turn("L", float.Parse(subStrings[1])); return; 
             case "TR": Turn("R", -float.Parse(subStrings[1])); return;
             case "MV": Move(float.Parse(subStrings[1])); return;
-            case "repeat": Repeat(line, int.Parse(subStrings[1])); return;
             case "CH": ChangePosition(subStrings[1], float.Parse(subStrings[2])); return;
             case "SET": SetPosition(subStrings[1], float.Parse(subStrings[2])); return;
             case "GO": SetPosition("X", float.Parse(subStrings[1])); SetPosition("Y", float.Parse(subStrings[2])); return;
+            case "repeat": Repeat(line, subStrings[1]); return;
         }
 
     }
@@ -102,7 +102,7 @@ public class Motion : MonoBehaviour
         }
     }
 
-    private void Repeat(string line, int times)
+    private void Repeat(string line, String times)
     {
         // repeat 10 times #MV 10#
         // repeatuntil yPos = 50 and xPos = 50 #SET X 0;CH Y 10#
@@ -110,10 +110,24 @@ public class Motion : MonoBehaviour
         String body = subStrings[1];
         string[] lines = body.Split(';');
 
-        for (int i = 0; i < times; i++)
+        if(times == "forever")
         {
-            Parser(lines);
+            // Should repeat forever, unity crashed !!!
+            /*while (true)
+            {
+                Parser(lines);
+            }*/
         }
+        else
+        {
+            int repeatTimes = int.Parse(times);
+            for (int i = 0; i < repeatTimes; i++)
+            {
+                Parser(lines);
+            }
+        }
+
+
 
 
 

@@ -1,2 +1,2 @@
 When Flag
-GO 10 35
+repeat forever #TR 10#
