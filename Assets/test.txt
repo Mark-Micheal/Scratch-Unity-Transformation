@@ -1,2 +1,2 @@
 When Flag
-MV 10
+GO 10 35
