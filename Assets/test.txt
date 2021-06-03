@@ -1,3 +1,4 @@
 When Flag
-repeat 10 times #MV 1;Wait 1 secs#
+repeat forever #TR 15;MV 10#
+
 

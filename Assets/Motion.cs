@@ -30,6 +30,12 @@ public class Motion : MonoBehaviour
         lines = File.ReadAllLines(textFile);
         commands = lines.ToList();
         print(String.Join(",", commands));
+        string[] test = "If dir > 50 and xPos = 50 then #CH Y 10# else #CH X 10#".Split(new string[] { "and" }, StringSplitOptions.None);
+        foreach (string item in test)
+        {
+            print(item);
+        }
+      
                 
     }
     void Update()
@@ -40,8 +46,8 @@ public class Motion : MonoBehaviour
             {
                 string i = commands[0];
                 commands.RemoveAt(0);
-                print(i);
-                print(String.Join(",", commands));
+                print("command : "+i);
+                print("stack : " + String.Join(",", commands));
                 CheckKeyword(i);
             }
             else
@@ -68,11 +74,10 @@ public class Motion : MonoBehaviour
 
         if (times == "forever")
         {
-            // Should repeat forever, unity crashed !!!
-            /*while (true)
-            {
-                Parser(lines);
-            }*/
+            commands.InsertRange(0, lines);
+            commands.Insert(lines.Length, line);
+
+
         }
         else
         {
@@ -101,6 +106,8 @@ public class Motion : MonoBehaviour
             case "GO": SetPosition("X", float.Parse(subStrings[1])); SetPosition("Y", float.Parse(subStrings[2])); return;
             case "repeat": Parserepeat(line, subStrings[1]); return;
             case "Wait": Wait(float.Parse(subStrings[1])); return;
+            case "If": ifElseStatement(line, subStrings[1], subStrings[2], subStrings[3]); return;
+
         }
 
     }
@@ -236,6 +243,75 @@ public class Motion : MonoBehaviour
             return v1 < V2;
 
         return false;
+
+    }
+    public void ifElseStatement(string line, string variable, string op, string v )
+    {
+        bool containsElse = line.Contains("else");
+        float x = transform.position.x;
+        float y = transform.position.y;
+        float dir = transform.rotation.z;
+        string[] substrings;
+        bool satisfied = false;
+        line = line.Substring(3);
+        if (line.Contains("and"))
+        {
+            substrings = line.Split(new string[] { "and" }, StringSplitOptions.None);
+            string[] conditions = substrings[0].Split();
+            bool c1 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            conditions = substrings[1].Substring(1).Split();
+            print("conditions : " + String.Join(",", conditions));
+            bool c2 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            satisfied = c1 && c2;
+        }
+        else if (line.Contains("or"))
+        {
+            substrings = line.Split(new string[] { "or" }, StringSplitOptions.None);
+            string[] conditions = substrings[0].Split();
+            bool c1 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            conditions = substrings[1].Split();
+            bool c2 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            satisfied = c1 | c2;
+        }
+        else
+        {
+            substrings = line.Split();
+            satisfied = operators(parseOperand(substrings[0]), parseOperand(substrings[2]), substrings[1]);
+        }
+
+        if (satisfied)
+        {
+            string[] subs = line.Split('#');
+            string body = subs[1];
+            string[] lines = body.Split(';');
+            commands.InsertRange(0, lines);
+        }
+        else
+        {
+            if (containsElse)
+            {
+                string[] subs =  line.Split(new string[] { "else" }, StringSplitOptions.None);
+                subs = subs[1].Substring(1).Split('#');
+                string body = subs[1];
+                string[] lines = body.Split(';');
+                commands.InsertRange(0, lines);
+            }
+            return;
+        }
+
+    } 
+
+    public float parseOperand(string operand)
+
+    {
+        print("op :: " +operand);
+        switch (operand)
+        {
+            case "xPos":  return transform.position.x ;
+            case "yPos":  return transform.position.y ;
+            case "dir":  return transform.rotation.z ;
+            default: return float.Parse(operand);
+        }
 
     }
     
