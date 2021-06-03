@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEngine;
+using System.Linq;
+
 
 public class Motion : MonoBehaviour
 {
@@ -16,35 +18,71 @@ public class Motion : MonoBehaviour
     public TextMeshProUGUI say;
     public int x;
     public float factor = 0.1f;
+    private bool execute = true;
+    private String [] lines;
+    List<String> commands = new List<string>();
 
     // Start is called before the first frame update
     void Start()
     {
        // textFile = "/buildTest.txt";
         textFile = "Assets/test.txt";
-        string[] lines = File.ReadAllLines(textFile);
-        Parser(lines);
-
-        /*foreach (string line in lines)
+        lines = File.ReadAllLines(textFile);
+        commands = lines.ToList();
+        print(String.Join(",", commands));
+                
+    }
+    void Update()
+    {
+        if (execute)
         {
-            print(line);
-            CheckKeyword(line);
+            if (commands.Count > 0)
+            {
+                string i = commands[0];
+                commands.RemoveAt(0);
+                print(i);
+                print(String.Join(",", commands));
+                CheckKeyword(i);
+            }
+            else
+            {
+                execute = false;
+            }
 
-        }*/
 
-        print("total rotation applied: " + rotationIncrement);
-        print("total movement applied: " + positionIncrement);
+        }
 
-        
 
-        //----testing----
-        print("testing start");
-        //Wait(30);
-        //Say("hello", 2, true);
-        print("testing finish");
-        StartCoroutine(WaitUntil());
-        // transform.position += transform.right * positionIncrement * 0.1f;
-        // transform.Translate(0,5,0);
+
+
+
+    }
+    private void Parserepeat(string line, String times)
+    {
+
+        // repeat 10 times #MV 10#
+        // repeatuntil yPos = 50 and xPos = 50 #SET X 0;CH Y 10#
+        string[] subStrings = line.Split('#');
+        String body = subStrings[1];
+        string[] lines = body.Split(';');
+
+        if (times == "forever")
+        {
+            // Should repeat forever, unity crashed !!!
+            /*while (true)
+            {
+                Parser(lines);
+            }*/
+        }
+        else
+        {
+            int repeatTimes = int.Parse(times);
+            for (int i = 0; i < repeatTimes; i++)
+            {
+                commands.InsertRange(0,lines);
+            }
+        }
+
 
     }
 
@@ -61,7 +99,8 @@ public class Motion : MonoBehaviour
             case "CH": ChangePosition(subStrings[1], float.Parse(subStrings[2])); return;
             case "SET": SetPosition(subStrings[1], float.Parse(subStrings[2])); return;
             case "GO": SetPosition("X", float.Parse(subStrings[1])); SetPosition("Y", float.Parse(subStrings[2])); return;
-            case "repeat": Repeat(line, subStrings[1]); return;
+            case "repeat": Parserepeat(line, subStrings[1]); return;
+            case "Wait": Wait(float.Parse(subStrings[1])); return;
         }
 
     }
@@ -136,17 +175,6 @@ public class Motion : MonoBehaviour
     private void Turn(String direction, float value)
     {
         transform.Rotate(0, 0, value);
-        /*if(direction == "L")
-        {
-            // rotate left (positive rotation)
-            transform.Rotate(0, 0, value);
-        }
-        else
-        {
-            // rotate right (negative rotation)
-            transform.Rotate(0, 0, -value);
-        }*/
-
     }
 
     private void Move(float value)
@@ -154,19 +182,6 @@ public class Motion : MonoBehaviour
         transform.position += transform.right * value * factor;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        Wait(0.10f);
-        String keyPressed = "a";
-        if (Input.GetKeyDown(keyPressed))
-        {
-            print("ok");
-        }
-        /*        Vector3 pos = this.transform.position;
-                pos.y += 0.01f;
-                this.transform.position = pos;*/
-    }
 
     public void ButtonClicked()
     {
@@ -177,6 +192,7 @@ public class Motion : MonoBehaviour
     public void Say(string message,float time,Boolean isTime)
     {
         // play meo music !!!
+        Wait(time);
         say.text = message;
         if (isTime)
         {
@@ -193,25 +209,34 @@ public class Motion : MonoBehaviour
 
     public void Wait(float time)
     {
-        //float Start = Time.deltaTime;
-        //float end = Start + time;
-        //print(Start + "::" + end);
-        //int i = 0;
-        //while (i<1000)
-        //{
-        //    print("end::" + end);
-        //    print("delta" + Time.deltaTime);
-        //    //if (end < Time.deltaTime) 
-        //    //    break;
-        //    i++;
-        //}
-       
+        execute = false;
+        InvokeRepeating("Excute", time, 0);
+
     }
     IEnumerator WaitUntil()
     {
-        Debug.Log("Waiting for princess to be rescued...");
+        execute = false;
         yield return new WaitUntil(() => x >= 10);
-        Debug.Log("Princess was rescued!");
+        execute = true;
+    }
+    
+
+    public void Excute()
+    {
+        execute = true;
     }
 
+    public bool operators(float v1, float V2, string op)
+    {
+        if (op == "=")
+            return v1 == V2;
+        if (op == ">")
+            return v1 > V2;
+        if (op == "<")
+            return v1 < V2;
+
+        return false;
+
+    }
+    
 }
