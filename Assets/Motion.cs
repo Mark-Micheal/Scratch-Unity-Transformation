@@ -280,9 +280,13 @@ public class Motion : MonoBehaviour
     public void IfElseStatement(string line, string variable, string op, string v)
     {
         bool containsElse = line.Contains("else");
-        string[] substrings;
-        bool satisfied = false;
+        string[] substrings = line.Split('#');
+        string body = substrings[1];
+        bool satisfied = checkcondition(substrings[0].Substring(0, substrings[0].Length - 1));
+        print("check condition: " + satisfied);
         line = line.Substring(3);
+
+        /*
         if (line.Contains("and"))
         {
             substrings = line.Split(new string[] { "and" }, StringSplitOptions.None);
@@ -307,11 +311,14 @@ public class Motion : MonoBehaviour
             substrings = line.Split();
             satisfied = operators(parseOperand(substrings[0]), parseOperand(substrings[2]), substrings[1]);
         }
+        */
+
+        print("after logic: " + satisfied);
 
         if (satisfied)
         {
             string[] subs = line.Split('#');
-            string body = subs[1];
+            body = subs[1];
             string[] lines = body.Split(';');
             commands.InsertRange(0, lines);
         }
@@ -321,7 +328,7 @@ public class Motion : MonoBehaviour
             {
                 string[] subs = line.Split(new string[] { "else" }, StringSplitOptions.None);
                 subs = subs[1].Substring(1).Split('#');
-                string body = subs[1];
+                body = subs[1];
                 string[] lines = body.Split(';');
                 commands.InsertRange(0, lines);
             }
