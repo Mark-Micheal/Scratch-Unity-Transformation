@@ -1,3 +1,2 @@
-repeatuntil yPos > 10 and xPos > 10 #CH X 10;CH Y 10;Wait 3 secs#
-If xPos = 50 then #GO 0 0#
-
+When KP space
+repeatuntil yPos = 3 and xPos = 3 #MV 1;CH Y 1#

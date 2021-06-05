@@ -9,15 +9,16 @@ using System.Linq;
 
 public class Motion : MonoBehaviour
 {
-    public TextMeshPro text;
-    public TMP_InputField input;
+    public TextMeshProUGUI text;
     private string textFile;
     private bool flagUsed;
     private float rotationIncrement;
     private float positionIncrement;
+    public GameObject sayObject;
+    public GameObject thinkObject;
     public TextMeshProUGUI say;
+    public TextMeshProUGUI think;
     public float x;
-    public float factor = 0.1f;
     private bool execute = true;
     private bool repeat;
     private string[] lines;
@@ -26,12 +27,25 @@ public class Motion : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // textFile = "/buildTest.txt";
-        textFile = "Assets/test.txt";
-        lines = File.ReadAllLines(textFile);
-        commands = lines.ToList();
-        print(String.Join(",", commands));
+        sayObject.SetActive(false);
+        thinkObject.SetActive(false);
+        if (Application.isEditor)
+        {
+            textFile = "Assets/test.txt";
+        }
+        else
+        {
+            textFile = "code.txt";
+        }
 
+
+        lines = File.ReadAllLines(textFile);
+        text.SetText("");
+        for (int i = 0; i < lines.Length; i++)
+        {
+            text.SetText(text.text + lines[i] + '\n');
+        }
+        commands = lines.ToList();
     }
     void Update()
     {
@@ -44,7 +58,7 @@ public class Motion : MonoBehaviour
                 if (!repeat)
                     commands.RemoveAt(0);
                 print("command : " + i);
-                print("stack : " + String.Join(",", commands));
+                //print("stack : " + String.Join(",", commands));
                 CheckKeyword(i);
             }
             else
@@ -93,10 +107,12 @@ public class Motion : MonoBehaviour
     private void CheckKeyword(string line)
     {
         string[] subStrings = line.Split();
-
+        
         switch (subStrings[0])
         {
             case "When": WhenParser(subStrings); return;
+            case "say": SayThink(line,'S');return;
+            case "think": SayThink(line, 'T');return;
             case "TL": Turn("L", float.Parse(subStrings[1])); return;
             case "TR": Turn("R", -float.Parse(subStrings[1])); return;
             case "MV": Move(float.Parse(subStrings[1])); return;
@@ -105,7 +121,7 @@ public class Motion : MonoBehaviour
             case "GO": SetPosition("X", float.Parse(subStrings[1])); SetPosition("Y", float.Parse(subStrings[2])); return;
             case "repeat": Parserepeat(line, subStrings[1]); return;
             case "repeatuntil": RepeatUntil(line); return;
-            case "Wait": Wait(float.Parse(subStrings[1])); return;
+            case "wait": Wait(float.Parse(subStrings[1])); return;
             case "waituntil": StartCoroutine(WaitUntil(line)); return;
             case "If": IfElseStatement(line, subStrings[1], subStrings[2], subStrings[3]); return;
 
@@ -118,9 +134,7 @@ public class Motion : MonoBehaviour
         string[] subStrings = line.Split('#');
         string body = subStrings[1];
         string[] lines = body.Split(';');
-        print(subStrings[0].Substring(0, subStrings.Length - 1));
         bool condition  = checkcondition(subStrings[0].Substring(0,subStrings[0].Length-1));
-        print("ccc" + condition);
         if (!condition)
         {
         commands.InsertRange(0, lines);
@@ -136,24 +150,26 @@ public class Motion : MonoBehaviour
         Vector3 newPos = Vector3.zero;
         if (variable == "X")
         {
-            newPos = new Vector3(value * factor, transform.position.y, transform.position.z);
+            newPos = new Vector3(value, transform.position.y, transform.position.z);
         }
         else
         {
-            newPos = new Vector3(transform.position.x, value * factor, transform.position.z);
+            newPos = new Vector3(transform.position.x, value, transform.position.z);
         }
         transform.position = newPos;
     }
 
     private void ChangePosition(string variable, float value)
     {
+        print("Value" + value);
         if (variable == "X")
         {
-            transform.Translate(value * factor, 0, 0);
+
+            transform.Translate(value, 0, 0);
         }
         else
         {
-            transform.Translate(0, value * factor, 0);
+            transform.Translate(0, value, 0);
         }
     }
 
@@ -165,25 +181,82 @@ public class Motion : MonoBehaviour
 
     private void Move(float value)
     {
-        transform.position += transform.right * value * factor;
+        transform.position += transform.right * value;
     }
 
 
     public void ButtonClicked()
     {
-        String output = input.text;
-        text.SetText(output);
-
+        if (flagUsed)
+        {
+            execute = true;
+            flagUsed = false;
+        }
     }
-    public void Say(string message, float time, Boolean isTime)
+    public void SayThink(string line, char code)
     {
-        // play meo music !!!
-        Wait(time);
-        say.text = message;
+        string message = "";
+        float time;
+        Boolean isTime = line.Contains("for");
+        
+        // say Hello World! for 2 secs
         if (isTime)
         {
-            InvokeRepeating("ClearSay", time, 0);  //1s delay
+            string[] substrings = line.Split(new string[] { " for " }, StringSplitOptions.None);
+            string[] messageStrings = substrings[0].Split();
+            for (int i = 1; i < messageStrings.Length; i++)
+            {
+                message += messageStrings[i] + " ";
+            }
+            time = float.Parse(substrings[1].Split()[0]);
+
+
+            if(code == 'S')
+            {
+                say.text = message;
+                sayObject.SetActive(true);
+                thinkObject.SetActive(false);
+            }
+            else if (code == 'T')
+            {
+                think.text = message;
+                sayObject.SetActive(false);
+                thinkObject.SetActive(true);
+            }
+
+            
+            Wait(time);
+            InvokeRepeating("ClearSay", time, 0);
         }
+        else // say Hello World!
+        {
+            string[] messageStrings = line.Split();
+            for (int i = 1; i < messageStrings.Length; i++)
+            {
+                message += messageStrings[i] + " ";
+            }
+            if (code == 'S')
+            {
+                say.text = message;
+                sayObject.SetActive(true);
+                thinkObject.SetActive(false);
+            }
+            else if (code == 'T')
+            {
+                think.text = message;
+                sayObject.SetActive(false);
+                thinkObject.SetActive(true);
+            }
+        }
+
+        // play meo music !!!
+        //Wait(time);
+        //say.text = message;
+
+
+
+
+
 
 
     }
@@ -191,12 +264,15 @@ public class Motion : MonoBehaviour
     private void ClearSay()
     {
         say.text = "";
+        think.text = "";
+        sayObject.SetActive(false);
+        thinkObject.SetActive(false);
     }
 
     public void Wait(float time)
     {
         execute = false;
-        InvokeRepeating("Excute", time, 0);
+        InvokeRepeating("Execute", time, 0);
 
     }
     IEnumerator WaitUntil(string line)
@@ -209,34 +285,33 @@ public class Motion : MonoBehaviour
 
     public bool checkcondition(string line)
     {
-        execute = false;
+        // execute = false;
         bool satisfied = false;
         string[] substrings = line.Split(new[] { ' ' }, 2);
         line = substrings[1];
-        print(line);
 
         if (line.Contains("and"))
         {
             substrings = line.Split(new string[] { "and" }, StringSplitOptions.None);
             string[] conditions = substrings[0].Split();
-            bool c1 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            bool c1 = Operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
             conditions = substrings[1].Substring(1).Split();
-            bool c2 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            bool c2 = Operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
             satisfied = c1 && c2;
         }
         else if (line.Contains("or"))
         {
             substrings = line.Split(new string[] { "or" }, StringSplitOptions.None);
             string[] conditions = substrings[0].Split();
-            bool c1 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            bool c1 = Operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
             conditions = substrings[1].Substring(1).Split();
-            bool c2 = operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
+            bool c2 = Operators(parseOperand(conditions[0]), parseOperand(conditions[2]), conditions[1]);
             satisfied = c1 | c2;
         }
         else
         {
             substrings = line.Split();
-            satisfied = operators(parseOperand(substrings[0]), parseOperand(substrings[2]), substrings[1]);
+            satisfied = Operators(parseOperand(substrings[0]), parseOperand(substrings[2]), substrings[1]);
         }
         return satisfied;
     }
@@ -249,23 +324,25 @@ public class Motion : MonoBehaviour
 
     public void WhenParser(string[] substrings)
     {
+        
         if (substrings[1] == "KP")
         {
-            Whenkey(substrings[2]);
+            StartCoroutine(Whenkey(substrings[2].ToLower()));
         }
         else
         {
             flagUsed = true;
         }
+        execute = false;
 
     }
 
-    public void Excute()
+    public void Execute()
     {
         execute = true;
     }
 
-    public bool operators(float v1, float V2, string op)
+    public bool Operators(float v1, float V2, string op)
     {
         if (op == "=")
             return v1 == V2;
@@ -283,7 +360,6 @@ public class Motion : MonoBehaviour
         string[] substrings = line.Split('#');
         string body = substrings[1];
         bool satisfied = checkcondition(substrings[0].Substring(0, substrings[0].Length - 1));
-        print("check condition: " + satisfied);
         line = line.Substring(3);
 
         /*
@@ -313,8 +389,6 @@ public class Motion : MonoBehaviour
         }
         */
 
-        print("after logic: " + satisfied);
-
         if (satisfied)
         {
             string[] subs = line.Split('#');
@@ -340,7 +414,6 @@ public class Motion : MonoBehaviour
     public float parseOperand(string operand)
 
     {
-        print("op :: " + operand);
         switch (operand)
         {
             case "xPos": return transform.position.x;
