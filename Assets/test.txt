@@ -1,2 +1,2 @@
-When Flag
-repeat forever #TR 10#
+When KP space
+repeatuntil yPos = 3 and xPos = 3 #MV 1;CH Y 1#
