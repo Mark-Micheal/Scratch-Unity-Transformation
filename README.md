@@ -19,5 +19,5 @@ https://docs.google.com/document/d/1aafmrA98h12HkP8Nk-SCun2ipajcGY0GRxTgwjJef5s/
 7. The program can be started by either clicking on the flag button (`When Flag` command) or by pressing a keyboard button (`When KP {button}` command).
 
 # Note
-* To exit the program,, force exit using ALT+F4.
+* To exit the program, force exit using ALT+F4.
 * There is a limit to what scratch can move around the screen, specifically between [-7,7] in the x-dimension and [-4,4] in the y-dimension, so please take that into consideration when running a custom program.
